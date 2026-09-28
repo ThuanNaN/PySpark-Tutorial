@@ -1,20 +1,14 @@
-"""Integration tests for the full pipeline.
-
-Tests that:
-1. The batch pipeline runs end-to-end
-2. The streaming pipeline produces output
-3. ML training completes successfully
-"""
+"""Integration tests for the full pipeline."""
 import pytest
+from datetime import datetime, date
 from pyspark.sql import Row
-from taxi_analytics.utils.spark import create_spark, load_spark_conf
+from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType, TimestampType, DateType
 from taxi_analytics.pipeline import io, clean, enrich, aggregate
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def sample_data(spark):
     """Create a small test DataFrame mimicking taxi data."""
-    from pyspark.sql.types import StructType, StructField, DoubleType, IntegerType, StringType, TimestampType, DateType
     schema = StructType([
         StructField("fare_amount", DoubleType(), True),
         StructField("trip_distance", DoubleType(), True),
@@ -32,12 +26,12 @@ def sample_data(spark):
     rows = [
         Row(fare_amount=12.5, trip_distance=3.2, passenger_count=1, total_amount=18.0,
             tip_amount=2.5, PULocationID=1, DOLocationID=2,
-            tpep_pickup_datetime="2023-01-01 10:00:00", tpep_dropoff_datetime="2023-01-01 10:15:00",
-            pu_borough="Manhattan", pickup_day="2023-01-01", tip_pct=20.0),
+            tpep_pickup_datetime=datetime(2023,1,1,10,0,0), tpep_dropoff_datetime=datetime(2023,1,1,10,15,0),
+            pu_borough="Manhattan", pickup_day=date(2023,1,1), tip_pct=20.0),
         Row(fare_amount=25.0, trip_distance=10.5, passenger_count=2, total_amount=35.0,
             tip_amount=5.0, PULocationID=2, DOLocationID=3,
-            tpep_pickup_datetime="2023-01-01 14:00:00", tpep_dropoff_datetime="2023-01-01 14:30:00",
-            pu_borough="Brooklyn", pickup_day="2023-01-01", tip_pct=14.3),
+            tpep_pickup_datetime=datetime(2023,1,1,14,0,0), tpep_dropoff_datetime=datetime(2023,1,1,14,30,0),
+            pu_borough="Brooklyn", pickup_day=date(2023,1,1), tip_pct=14.3),
     ]
     return spark.createDataFrame(rows, schema)
 
@@ -45,11 +39,9 @@ def sample_data(spark):
 def test_end_to_end_batch(spark, sample_data):
     """Full batch pipeline produces aggregated output."""
     cleaned = clean.clean_trips(sample_data)
-    # Create mock zones for enrich
-    from taxi_analytics.pipeline.io import read_zones, ZONE_SCHEMA
     zones = spark.createDataFrame(
         [{"LocationID": 1, "Borough": "Manhattan", "Zone": "Hells Kitchen", "service_zone": "MAN"}],
-        schema=ZONE_SCHEMA
+        schema=io.ZONE_SCHEMA
     )
     enriched = enrich.add_zone_names(spark, cleaned, zones)
     result = aggregate.revenue_by_day_borough(enriched)
@@ -61,7 +53,6 @@ def test_batch_and_streaming_share_logic(sample_data):
     """Batch clean produces same result as streaming clean."""
     from taxi_analytics.pipeline.clean import clean_trips as batch_clean
     from taxi_analytics.streaming.clean import clean_trips as stream_clean
-    # Both should produce identical results
     batch_result = batch_clean(sample_data)
     stream_result = stream_clean(sample_data)
     assert batch_result.columns == stream_result.columns
