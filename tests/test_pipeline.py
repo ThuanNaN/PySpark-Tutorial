@@ -59,10 +59,12 @@ def test_revenue_aggregation(spark):
     schema = StructType([
         StructField("pickup_day", DateType(), True),
         StructField("pu_borough", StringType(), True),
-        StructField("trips", IntegerType(), True),
+        StructField("total_amount", DoubleType(), True),
+        StructField("trip_distance", DoubleType(), True),
+        StructField("tip_pct", DoubleType(), True),
     ])
     df = spark.createDataFrame(
-        [Row(pickup_day=date(2023,1,1), pu_borough="Manhattan", trips=100)],
+        [Row(pickup_day=date(2023,1,1), pu_borough="Manhattan", total_amount=18.0, trip_distance=3.2, tip_pct=20.0)],
         schema
     )
     result = revenue_by_day_borough(df)
