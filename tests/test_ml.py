@@ -23,11 +23,12 @@ def test_prepare_features(spark):
 
 def test_train_regression(spark):
     """LinearRegression model trains and produces predictions."""
+    from pyspark.ml.linalg import Vectors, VectorUDT
     schema = StructType([
-        StructField("features", "vector", True),
+        StructField("features", VectorUDT(), True),
         StructField("total_amount", DoubleType(), True),
     ])
-    rows = [Row(features=[1.0, 2.0, 3.0], total_amount=15.0)]
+    rows = [Row(features=Vectors.dense([1.0, 2.0, 3.0]), total_amount=15.0)]
     df = spark.createDataFrame(rows, schema)
     model = train_regression(df)
     predictions = model.transform(df)
