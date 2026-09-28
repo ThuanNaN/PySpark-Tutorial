@@ -24,4 +24,12 @@ A complete PySpark project accompanying the VLAI PySpark Tutorial (19 topics).
 
 ## Data
 
-Dataset: NYC TLC Yellow Taxi, Jan–Mar 2023 (~140 MB Parquet)
+Dataset: NYC TLC Yellow Taxi, Jan-Mar 2023 (~140 MB Parquet)
+
+## Running
+
+1. **Download data**: `python scripts/crawl_nyc_taxi.py`
+2. **Batch pipeline**: `python -m taxi_analytics.jobs.run_analytics [trips_path] [zones_path] [output_path]`
+3. **Streaming pipeline**: `python -m taxi_analytics.jobs.run_streaming [stream_input] [output_path]`
+   - In another terminal: `cp data/stream_backup/*.parquet data/stream_input/` to feed data
+4. **Tests**: `pytest -q`
