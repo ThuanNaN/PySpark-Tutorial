@@ -11,6 +11,7 @@ def test_load_spark_conf():
 
 def test_create_spark(spark):
     """Reuse the pytest fixture's SparkSession for integration."""
+    spark.stop()
     conf = load_spark_conf("conf/spark.conf")
     session = create_spark(conf)
     assert session.sparkContext.appName == "taxi-analytics"
